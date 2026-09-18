@@ -469,6 +469,15 @@ fn build(sysroot: Option<&str>) -> io::Result<()> {
                 .expect("Failed to parse xcrun output")
                 .trim()
         ));
+
+        // Without a platform flag Apple's clang compiles and links for the
+        // host, so every object would be built for macOS. The flag has to
+        // reach the link step too, or configure's compiler test fails to
+        // link its own object.
+        if let Some(flag) = apple_version_min_cflag(&target_os, is_sim) {
+            configure.arg(format!("--extra-cflags={flag}"));
+            configure.arg(format!("--extra-ldflags={flag}"));
+        }
     }
 
     if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("android") {
