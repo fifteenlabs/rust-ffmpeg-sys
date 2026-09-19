@@ -350,6 +350,11 @@ fn build(sysroot: Option<&str>) -> io::Result<()> {
     };
 
     configure.current_dir(&source_dir);
+    // Apple's clang honours this on host builds too, and configure's compiler
+    // test and ffmpeg's host-side generators (HOSTCC) are host builds: with the
+    // variable set they are linked for iPhone and cannot run. The iOS target
+    // flags are passed explicitly above, so configure never needs it.
+    configure.env_remove("IPHONEOS_DEPLOYMENT_TARGET");
     configure.arg(format!("--prefix={}", search().to_string_lossy()));
 
     let target = env::var("TARGET").unwrap();
@@ -787,6 +792,7 @@ fn build(sysroot: Option<&str>) -> io::Result<()> {
 
     // run make
     if !Command::new("make")
+        .env_remove("IPHONEOS_DEPLOYMENT_TARGET")
         .arg("-j")
         .arg(num_cpus::get().to_string())
         .current_dir(source())
@@ -798,6 +804,7 @@ fn build(sysroot: Option<&str>) -> io::Result<()> {
 
     // run make install
     if !Command::new("make")
+        .env_remove("IPHONEOS_DEPLOYMENT_TARGET")
         .current_dir(source())
         .arg("install")
         .status()?
